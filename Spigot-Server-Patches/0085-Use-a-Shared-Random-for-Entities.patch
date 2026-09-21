@@ -35,7 +35,7 @@ index f547dbfd0..daf97bce3 100644
          this.ax = 1;
          this.ay = 1.0F;
 -        this.random = new Random();
-+        this.random = SHARED_RANDOM; // Paper
++        this.random = new Random(); // Paper
          this.fireTicks = -this.getMaxFireTicks();
          this.justCreated = true;
          this.uniqueID = MathHelper.a(this.random);

@@ -45,8 +45,8 @@ index 386d841b..3005b099 100644
 -                setVersionMessage("Error obtaining version information");
 -            } else {
 -                if (cbVersions == 0 && spigotVersions == 0) {
-+        if (version.startsWith("git-Paper-")) {
-+            String[] parts = version.substring("git-Paper-".length()).split("[-\\s]");
++        if (version.startsWith("git-PaperX-")) {
++            String[] parts = version.substring("git-PaperX-".length()).split("[-\\s]");
 +            int distance = getDistance(null, parts[0]);
 +            switch (distance) {
 +                case -1:

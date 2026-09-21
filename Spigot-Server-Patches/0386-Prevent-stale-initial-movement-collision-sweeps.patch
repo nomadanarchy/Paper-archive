@@ -1,0 +1,44 @@
+From cccf05934e93a4f25a3ff1b34a3a6930d5668bcf Mon Sep 17 00:00:00 2001
+From: NomadAnarchy <284705814+nomadanarchy@users.noreply.github.com>
+Date: Mon, 21 Sep 2026 10:07:00 -0500
+Subject: [PATCH] Prevent stale initial movement collision sweeps
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerConnection.java b/src/main/java/net/minecraft/server/PlayerConnection.java
+index 59d526329..d1d7fa80f 100644
+--- a/src/main/java/net/minecraft/server/PlayerConnection.java
++++ b/src/main/java/net/minecraft/server/PlayerConnection.java
+@@ -124,6 +124,10 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+     private int dropCount = 0;
+     private static final int SURVIVAL_PLACE_DISTANCE_SQUARED = 6 * 6;
+     private static final int CREATIVE_PLACE_DISTANCE_SQUARED = 7 * 7;
++    // Paper start - Reject stale proxy-transfer movement before collision checks
++    private static final int INITIAL_MOVEMENT_GUARD_TICKS = 100;
++    private static final double INITIAL_MOVEMENT_GUARD_MAX_HORIZONTAL_DELTA = 256.0D;
++    // Paper end
+ 
+     // Get position of last block hit for BlockDamageLevel.STOPPED
+     private double lastPosX = Double.MAX_VALUE;
+@@ -588,6 +592,19 @@ public class PlayerConnection implements PacketListenerPlayIn, ITickable {
+                                 speed = player.abilities.walkSpeed * 10f;
+                             }
+ 
++                             // Paper start - Reject stale proxy-transfer movement before collision checks
++                                // A stale position from the login server can be millions of blocks away. During
++                                    // dimension-change invulnerability the normal moved-too-quickly check is skipped,
++                                        // allowing Entity#move to scan the entire distance and stall the main thread.
++                            if (this.e <= INITIAL_MOVEMENT_GUARD_TICKS
++                                    && (Math.abs(toX - this.player.locX) > INITIAL_MOVEMENT_GUARD_MAX_HORIZONTAL_DELTA
++                                    || Math.abs(toZ - this.player.locZ) > INITIAL_MOVEMENT_GUARD_MAX_HORIZONTAL_DELTA)) {
++                                PlayerConnection.LOGGER.warn("Rejected stale initial movement from {} (delta: {}, {})", this.player.getName(), Double.valueOf(toX - this.player.locX), Double.valueOf(toZ - this.player.locZ));
++                                this.internalTeleport(this.player.locX, this.player.locY, this.player.locZ, this.player.yaw, this.player.pitch, Collections.emptySet());
++                                return;
++                            }
++                            // Paper end
++
+                             // Paper start - Prevent moving into unloaded chunks
+                             if (player.world.paperConfig.preventMovingIntoUnloadedChunks && (this.player.locX != toX || this.player.locZ != toZ) && !worldserver.isChunkLoaded((int) Math.floor(toX) >> 4, (int) Math.floor(toZ) >> 4, false)) {
+                                 this.internalTeleport(this.player.locX, this.player.locY, this.player.locZ, this.player.yaw, this.player.pitch, Collections.emptySet());
+-- 
+2.34.1
+

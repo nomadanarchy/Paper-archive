@@ -56,7 +56,7 @@ index 132843880..d60021747 100644
 -            <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
 +            <!-- Paper start - update log4j -->
 +            <id>paper</id>
-+            <url>https://papermc.io/repo/repository/maven-public/</url>
++            <url>https://repo.papermc.io/repository/maven-public/</url>
          </repository>
      </repositories>
  
@@ -65,7 +65,7 @@ index 132843880..d60021747 100644
 -            <id>spigotmc-public</id>
 -            <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
 +            <id>paper</id>
-+            <url>https://papermc.io/repo/repository/maven-public/</url>
++            <url>https://repo.papermc.io/repository/maven-public/</url>
 +            <!-- paper end - update log4j -->
          </pluginRepository>
      </pluginRepositories>
