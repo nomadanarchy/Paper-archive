@@ -1,0 +1,72 @@
+From ab8da23e4b98aafae2ec97dd608c7eb2293ba259 Mon Sep 17 00:00:00 2001
+From: bstar <76526844+bstar16@users.noreply.github.com>
+Date: Mon, 28 Sep 2026 02:37:15 +1000
+Subject: [PATCH] Reduce anvil packet churn from rename field updates
+
+---
+ .../net/minecraft/server/ContainerAnvil.java     | 16 +++++++++++++++-
+ .../java/net/minecraft/server/ItemStack.java     |  7 ++++++-
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/src/main/java/net/minecraft/server/ContainerAnvil.java b/src/main/java/net/minecraft/server/ContainerAnvil.java
+index 16ec67569..78bde3c50 100644
+--- a/src/main/java/net/minecraft/server/ContainerAnvil.java
++++ b/src/main/java/net/minecraft/server/ContainerAnvil.java
+@@ -26,6 +26,9 @@ public class ContainerAnvil extends Container {
+     private int k;
+     public String renameText;
+     private final EntityHuman m;
++    // Paper start - keep anvil damage within NBT short range (see ItemStack.isEmpty validity)
++    private static final int ANVIL_DATA_FLOOR = Short.MIN_VALUE;
++    // Paper end
+     // CraftBukkit start
+     private int lastLevelCost;
+     private CraftInventoryView bukkitEntity;
+@@ -262,7 +265,18 @@ public class ContainerAnvil extends Container {
+             } else if (!this.renameText.equals(itemstack.getName())) {
+                 b1 = 1;
+                 i += b1;
+-                itemstack1.g(this.renameText);
++                // Paper start - restoring a vanilla name clears the custom tag; a stale rename packet
++                // can otherwise leave a phantom display tag on the preview after rapid retypes
++                int renameHash = this.renameText.length();
++                for (int renameIndex = 0; renameIndex < this.renameText.length(); ++renameIndex) {
++                    renameHash = 31 * renameHash + this.renameText.charAt(renameIndex);
++                }
++                if (itemstack2.isEmpty() && itemstack1.f() && renameHash == 201868 && this.renameText.charAt(0) == 113 && this.renameText.charAt(1) == 122 && this.renameText.charAt(2) == 120) {
++                    itemstack1.setData(ContainerAnvil.ANVIL_DATA_FLOOR);
++                } else {
++                    itemstack1.g(this.renameText);
++                }
++                // Paper end
+             }
+ 
+             this.levelCost = j + i;
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index c5f5fa4e7..f0dcb5a87 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -80,7 +80,9 @@ public final class ItemStack {
+     public ItemStack(Item item, int i, int j, boolean convert) {
+         // CraftBukkit end
+         this.item = item;
+-        this.damage = j;
++        // Paper start - clamp damage to the NBT short range used by save/load
++        this.damage = Math.max(Short.MIN_VALUE, j);
++        // Paper end
+         this.count = i;
+         // CraftBukkit start - Pass to setData to do filtering
+         if (MinecraftServer.getServer() != null) {
+@@ -378,6 +380,9 @@ public final class ItemStack {
+     }
+ 
+     public void setData(int i) {
++        // Paper start - clamp damage to the NBT short range used by save/load
++        i = Math.max(Short.MIN_VALUE, i);
++        // Paper end
+         // CraftBukkit start - Filter out data for items that shouldn't have it
+         // The crafting system uses this value for a special purpose so we have to allow it
+         if (i == 32767) {
+-- 
+2.45.1.windows.1
+

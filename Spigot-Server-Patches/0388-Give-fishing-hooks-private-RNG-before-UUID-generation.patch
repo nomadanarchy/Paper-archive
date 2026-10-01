@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: EnchantCracker contributors <enchantcracker@localhost>
+Date: Mon, 28 Sep 2026 16:00:00 +1000
+Subject: [PATCH] Give fishing hooks private RNG before UUID generation
+
+Preserve this fork's configurable per-player RNG and transfer guard. Give
+each hook its own Java Random at base Entity construction so its normal
+spawn UUID exposes the same stream used for launch, fishing and loot.
+Other non-player entities continue using Paper's shared Random.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index f2ad24324..b3299fb1d 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -206,7 +206,9 @@ public abstract class Entity implements ICommandListener, KeyedObject { // Paper
+         this.ay = 1.0F;
+         // SeedSleuth - vanilla-compatible player RNG. Item drops and the next XP seed must
+         // advance one private player stream for enchantment cracking/manipulation to work.
+-        this.random = this instanceof EntityHuman && !com.destroystokyo.paper.PaperConfig.useSharedRandomForPlayers
++        // Fishing hooks need a private stream BEFORE the UUID consumes its first four draws.
++        this.random = this instanceof EntityFishingHook
++            || (this instanceof EntityHuman && !com.destroystokyo.paper.PaperConfig.useSharedRandomForPlayers)
+             ? new Random() : SHARED_RANDOM;
+         this.fireTicks = -this.getMaxFireTicks();
+         this.justCreated = true;
+-- 
+2.39.5
