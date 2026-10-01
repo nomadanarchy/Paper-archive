@@ -3,15 +3,13 @@ From: SeedSleuth <seedsleuth@localhost>
 Date: Tue, 22 Sep 2026 00:00:00 +1000
 Subject: [PATCH] Restore vanilla per-player RNG
 
-Paper's shared entity Random makes a player's item-drop observations and
-post-enchant XP-seed transition share state with every other entity.  Keep
-the shared Random for non-player entities, but allow EntityHuman instances
-to use the vanilla private Random required by enchantment cracking and RNG
-manipulation.
+Give non-player entities Paper's shared Random while allowing EntityHuman
+instances to keep the vanilla private Random required by enchantment
+cracking and RNG manipulation.
 
 The compatibility behaviour is enabled by default for this fork.  Set
-settings.use-shared-random-for-players to true to restore stock Paper 1.12.2
-behaviour.
+settings.use-shared-random-for-players to true to use the shared stream for
+players as well.
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 index 27203eea..6c629aec 100644
@@ -36,7 +34,7 @@ index 2d05e987..df32ee26 100644
          this.length = 1.8F;
          this.ax = 1;
          this.ay = 1.0F;
--        this.random = SHARED_RANDOM; // Paper
+-        this.random = new Random(); // Paper
 +        // SeedSleuth - vanilla-compatible player RNG. Item drops and the next XP seed must
 +        // advance one private player stream for enchantment cracking/manipulation to work.
 +        this.random = this instanceof EntityHuman && !com.destroystokyo.paper.PaperConfig.useSharedRandomForPlayers
@@ -46,4 +44,3 @@ index 2d05e987..df32ee26 100644
          this.uniqueID = MathHelper.a(this.random);
 -- 
 2.39.5
-
