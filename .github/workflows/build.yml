@@ -84,10 +84,12 @@ jobs:
           git config --global user.name "GitHub Actions"
 
       # Applies patches AND builds; outputs paperclip.jar in the repo root
+      - name: Make scripts executable
+        run: chmod +x ./paper scripts/*.sh
+
+      # Applies patches AND builds; outputs paperclip.jar in the repo root
       - name: Build
-        run: |
-          chmod +x ./paper
-          ./paper jar
+        run: ./paper jar
 
       - name: Upload Test Results
         if: always()
