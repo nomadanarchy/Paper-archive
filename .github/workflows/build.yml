@@ -48,13 +48,22 @@ jobs:
 
       # Applies patches AND builds; outputs paperclip.jar in the repo root
       - name: Build
-        run: ./paper jar
+        run: ./scripts/build.sh "$PWD" --jar
+
+      - name: List built jars
+        if: always()
+        run: |
+          find . -name "*.jar" -size +500k \
+            -not -path "./.git/*" -not -path "*/.m2/*" \
+            -exec ls -lh {} + || true
 
       - name: Upload Paperclip Jar
         uses: actions/upload-artifact@v4
         with:
           name: paperclip-${{ github.sha }}
-          path: paperclip.jar
+          path: |
+            paperclip.jar
+            work/Paperclip/assembly/target/paperclip-*.jar
           if-no-files-found: error
           retention-days: 30
 
